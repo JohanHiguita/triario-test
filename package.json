@@ -1,0 +1,12 @@
+{
+  "name": "triario-hubspot-integration",
+  "version": "1.0.0",
+  "description": "Prueba tecnica backend Node.js - Integracion con HubSpot CRM (Contacts & Deals)",
+  "main": "src/index.js",
+  "scripts": {},
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7"
+  }
+}
