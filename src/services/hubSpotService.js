@@ -11,7 +11,7 @@ async function getHubSpotContactNames() {
   let after;
 
   do {
-    const { results, paging } = await contactRepository.findAll({ after });
+    const { results, paging } = await contactRepository.findPage({ after });
 
     for (const contact of results) {
       const { firstname = "", lastname = "" } = contact.properties;

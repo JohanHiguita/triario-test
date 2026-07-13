@@ -9,7 +9,7 @@ const hubSpotClient = require("../clients/hubSpotClient");
  * @param {string[]} [options.properties=["firstname","lastname"]] - Contact properties to include in the response.
  * @returns {Promise<{results: object[], paging?: {next?: {after: string}}}>}
  */
-async function findAll({
+async function findPage({
   after,
   limit = 100,
   properties = ["firstname", "lastname"],
@@ -25,4 +25,4 @@ async function findAll({
   return response.data;
 }
 
-module.exports = { findAll };
+module.exports = { findPage };
