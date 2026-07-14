@@ -3,6 +3,7 @@ const {
   validatePaginationOptions,
   validateProperties,
   validateObjectId,
+  validateBatchUpsertInput,
 } = require("../utils/validateHubSpotPayload");
 
 /**
@@ -81,4 +82,30 @@ async function remove(contactId) {
   return true;
 }
 
-module.exports = { findPage, create, update, remove };
+/**
+ * Creates or updates a batch of contacts in a single request, using "email"
+ * as the unique identifier: contacts whose email already exists are
+ * updated, contacts whose email doesn't exist yet are created.
+ * POST /crm/v3/objects/contacts/batch/upsert
+ *
+ * @param {object[]} contacts - Each item must include at least an "email".
+ * @returns {Promise<object>} HubSpot's batch response (results + any errors).
+ */
+async function upsertBatch(contacts) {
+  validateBatchUpsertInput(contacts, "email");
+
+  const inputs = contacts.map((contact) => ({
+    id: contact.email,
+    idProperty: "email",
+    properties: contact,
+  }));
+
+  const response = await hubSpotClient.post(
+    "/crm/v3/objects/contacts/batch/upsert",
+    { inputs }
+  );
+
+  return response.data;
+}
+
+module.exports = { findPage, create, update, remove, upsertBatch };

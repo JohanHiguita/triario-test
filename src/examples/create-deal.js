@@ -4,7 +4,7 @@ async function run() {
   console.log("Creating deal in HubSpot...");
 
   try {
-    const deal = await createHubSpotDeal("Triario Test Deal 2", 5000);
+    const deal = await createHubSpotDeal("Triario Test Deal 2", 1000);
 
     console.log("Deal created successfully:");
     console.log(`  id: ${deal.id}`);

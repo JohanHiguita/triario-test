@@ -1,5 +1,6 @@
 require("dotenv").config();
 const axios = require("axios");
+const { handleHubSpotErrors } = require("../utils/handleHubSpotErrors");
 
 const { HUBSPOT_ACCESS_TOKEN } = process.env;
 
@@ -21,5 +22,8 @@ const hubSpotClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+// Normalizes/logs errors and retries with exponential backoff on 429/5xx.
+hubSpotClient.interceptors.response.use((response) => response, handleHubSpotErrors);
 
 module.exports = hubSpotClient;

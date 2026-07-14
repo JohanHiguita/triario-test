@@ -68,8 +68,36 @@ function validateObjectId(id) {
   }
 }
 
+/**
+ * Validates the array of records passed to a batch upsert (e.g.
+ * POST /crm/v3/objects/contacts/batch/upsert). Each record must carry the
+ * given unique identifier property (e.g. "email") as a non-empty string.
+ * HubSpot's batch endpoints accept at most 100 inputs per request.
+ *
+ * @param {object[]} records
+ * @param {string} idProperty - Name of the property used as unique identifier.
+ */
+function validateBatchUpsertInput(records, idProperty) {
+  if (!Array.isArray(records) || records.length === 0) {
+    throw new Error('"records" must be a non-empty array');
+  }
+
+  if (records.length > 100) {
+    throw new Error("HubSpot batch endpoints accept at most 100 records per request");
+  }
+
+  const hasInvalidId = records.some(
+    (record) => typeof record?.[idProperty] !== "string" || record[idProperty].trim().length === 0
+  );
+
+  if (hasInvalidId) {
+    throw new Error(`Every record must have a non-empty "${idProperty}" string`);
+  }
+}
+
 module.exports = {
   validatePaginationOptions,
   validateProperties,
   validateObjectId,
+  validateBatchUpsertInput,
 };

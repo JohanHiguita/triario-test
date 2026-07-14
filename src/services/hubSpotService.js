@@ -1,5 +1,6 @@
 const contactRepository = require("../repositories/contactRepository");
 const dealRepository = require("../repositories/dealRepository");
+const associationRepository = require("../repositories/associationRepository");
 
 /**
  * Returns the full name ("firstname lastname") of every contact in the
@@ -86,14 +87,12 @@ async function getHubSpotDeals({ after, limit, properties } = {}) {
 }
 
 /**
- * Creates a new deal in HubSpot, assigning it to the pipeline/stage
- * configured via HUBSPOT_PIPELINE_ID / HUBSPOT_STAGE_ID env vars.
- *
- * @param {string} dealName
- * @param {number|string} amount
- * @returns {Promise<object>} The created deal, including its HubSpot id.
+ * Reads and validates the default pipeline/stage configuration used when
+ * creating deals without an explicit pipeline/stage.
+ * it is "private" it is not in the exports
+ * @returns {{ pipeline: string, dealstage: string }}
  */
-async function createHubSpotDeal(dealName, amount) {
+function getDefaultDealPipelineConfig() {
   const { HUBSPOT_PIPELINE_ID, HUBSPOT_STAGE_ID } = process.env;
 
   if (!HUBSPOT_PIPELINE_ID || !HUBSPOT_STAGE_ID) {
@@ -102,11 +101,25 @@ async function createHubSpotDeal(dealName, amount) {
     );
   }
 
+  return { pipeline: HUBSPOT_PIPELINE_ID, dealstage: HUBSPOT_STAGE_ID };
+}
+
+/**
+ * Creates a new deal in HubSpot, assigning it to the pipeline/stage
+ * configured via HUBSPOT_PIPELINE_ID / HUBSPOT_STAGE_ID env vars.
+ *
+ * @param {string} dealName
+ * @param {number|string} amount
+ * @returns {Promise<object>} The created deal, including its HubSpot id.
+ */
+async function createHubSpotDeal(dealName, amount) {
+  const { pipeline, dealstage } = getDefaultDealPipelineConfig();
+
   return dealRepository.create({
     dealname: dealName,
     amount,
-    pipeline: HUBSPOT_PIPELINE_ID,
-    dealstage: HUBSPOT_STAGE_ID,
+    pipeline,
+    dealstage,
   });
 }
 
@@ -131,6 +144,45 @@ async function deleteHubSpotDeal(dealId) {
   return dealRepository.remove(dealId);
 }
 
+/**
+ * Creates a default (idempotent) association between a contact and a deal.
+ *
+ * @param {string|number} contactId
+ * @param {string|number} dealId
+ * @returns {Promise<object>} The association details returned by HubSpot.
+ */
+async function associateContactToDeal(contactId, dealId) {
+  return associationRepository.associate("contacts", contactId, "deals", dealId);
+}
+
+/**
+ * Syncs a set of contacts into HubSpot: contacts whose email already exists
+ * are updated, contacts whose email doesn't exist yet are created.
+ *
+ * @param {object[]} contacts - Each item must include at least an "email".
+ * @returns {Promise<object>} HubSpot's batch response (results + any errors).
+ */
+async function syncContactsWithHubSpot(contacts) {
+  return contactRepository.upsertBatch(contacts);
+}
+
+/**
+ * Syncs a set of deals into HubSpot: deals whose external_deal_id already
+ * exists are updated, deals whose external_deal_id doesn't exist yet are
+ * created. Every deal is assigned the pipeline/stage configured via
+ * HUBSPOT_PIPELINE_ID / HUBSPOT_STAGE_ID env vars.
+ *
+ * @param {object[]} deals - Each item must include at least "external_deal_id".
+ * @returns {Promise<object>} HubSpot's batch response (results + any errors).
+ */
+async function syncDealsWithHubSpot(deals) {
+  const { pipeline, dealstage } = getDefaultDealPipelineConfig();
+
+  const dealsWithPipeline = deals.map((deal) => ({ ...deal, pipeline, dealstage }));
+
+  return dealRepository.upsertBatch(dealsWithPipeline);
+}
+
 module.exports = {
   getHubSpotContactNames,
   getHubSpotContacts,
@@ -141,4 +193,7 @@ module.exports = {
   createHubSpotDeal,
   updateHubSpotDeal,
   deleteHubSpotDeal,
+  associateContactToDeal,
+  syncContactsWithHubSpot,
+  syncDealsWithHubSpot,
 };

@@ -3,6 +3,7 @@ const {
   validatePaginationOptions,
   validateProperties,
   validateObjectId,
+  validateBatchUpsertInput,
 } = require("../utils/validateHubSpotPayload");
 
 /**
@@ -80,4 +81,29 @@ async function remove(dealId) {
   return true;
 }
 
-module.exports = { findPage, create, update, remove };
+/**
+ * Creates or updates a batch of deals in a single request, using the custom
+ * "external_deal_id" property as the unique identifier: deals whose
+ * external_deal_id already exists are updated, otherwise they are created.
+ * POST /crm/v3/objects/deals/batch/upsert
+ *
+ * @param {object[]} deals - Each item must include at least "external_deal_id".
+ * @returns {Promise<object>} HubSpot's batch response (results + any errors).
+ */
+async function upsertBatch(deals) {
+  validateBatchUpsertInput(deals, "external_deal_id");
+
+  const inputs = deals.map((deal) => ({
+    id: deal.external_deal_id,
+    idProperty: "external_deal_id",
+    properties: deal,
+  }));
+
+  const response = await hubSpotClient.post("/crm/v3/objects/deals/batch/upsert", {
+    inputs,
+  });
+
+  return response.data;
+}
+
+module.exports = { findPage, create, update, remove, upsertBatch };

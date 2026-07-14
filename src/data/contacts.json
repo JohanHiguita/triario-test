@@ -1,0 +1,6 @@
+[
+  { "email": "luke@lukesdiner.com", "firstname": "Luke", "lastname": "Danes" },
+  { "email": "lorelai@thedragonfly.com", "firstname": "Lorelai", "lastname": "Gilmore" },
+  { "email": "michel@thedragonfly.com", "firstname": "Michel", "lastname": "Gerard" },
+  { "email": "triario.test@example.com", "firstname": "Triario", "lastname": "Synced" }
+]
