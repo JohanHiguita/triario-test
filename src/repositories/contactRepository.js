@@ -1,7 +1,7 @@
 const hubSpotClient = require("../clients/hubSpotClient");
 const {
   validatePaginationOptions,
-  validateContactProperties,
+  validateProperties,
   validateObjectId,
 } = require("../utils/validateHubSpotPayload");
 
@@ -39,7 +39,7 @@ async function findPage({
  * @returns {Promise<object>} The created contact, including its HubSpot id.
  */
 async function create(properties) {
-  validateContactProperties(properties);
+  validateProperties(properties);
 
   const response = await hubSpotClient.post("/crm/v3/objects/contacts", {
     properties,
@@ -57,7 +57,7 @@ async function create(properties) {
  */
 async function update(contactId, properties) {
   validateObjectId(contactId);
-  validateContactProperties(properties);
+  validateProperties(properties);
 
   const response = await hubSpotClient.patch(
     `/crm/v3/objects/contacts/${contactId}`,

@@ -1,4 +1,5 @@
 const contactRepository = require("../repositories/contactRepository");
+const dealRepository = require("../repositories/dealRepository");
 
 /**
  * Returns the full name ("firstname lastname") of every contact in the
@@ -70,10 +71,74 @@ async function deleteHubSpotContact(contactId) {
   return contactRepository.remove(contactId);
 }
 
+/**
+ * Lists a single page of deals with their full details, as returned by
+ * HubSpot (results + pagination cursor).
+ *
+ * @param {object} [options]
+ * @param {string} [options.after] - Pagination cursor from a previous call.
+ * @param {number} [options.limit] - Page size (HubSpot max is 100).
+ * @param {string[]} [options.properties] - Deal properties to include.
+ * @returns {Promise<{results: object[], paging?: {next?: {after: string}}}>}
+ */
+async function getHubSpotDeals({ after, limit, properties } = {}) {
+  return dealRepository.findPage({ after, limit, properties });
+}
+
+/**
+ * Creates a new deal in HubSpot, assigning it to the pipeline/stage
+ * configured via HUBSPOT_PIPELINE_ID / HUBSPOT_STAGE_ID env vars.
+ *
+ * @param {string} dealName
+ * @param {number|string} amount
+ * @returns {Promise<object>} The created deal, including its HubSpot id.
+ */
+async function createHubSpotDeal(dealName, amount) {
+  const { HUBSPOT_PIPELINE_ID, HUBSPOT_STAGE_ID } = process.env;
+
+  if (!HUBSPOT_PIPELINE_ID || !HUBSPOT_STAGE_ID) {
+    throw new Error(
+      "Missing HUBSPOT_PIPELINE_ID or HUBSPOT_STAGE_ID environment variable. Check your .env file."
+    );
+  }
+
+  return dealRepository.create({
+    dealname: dealName,
+    amount,
+    pipeline: HUBSPOT_PIPELINE_ID,
+    dealstage: HUBSPOT_STAGE_ID,
+  });
+}
+
+/**
+ * Updates an existing deal's properties (partial update).
+ *
+ * @param {string|number} dealId
+ * @param {object} properties - Only the properties to change.
+ * @returns {Promise<object>} The updated deal.
+ */
+async function updateHubSpotDeal(dealId, properties) {
+  return dealRepository.update(dealId, properties);
+}
+
+/**
+ * Deletes (archives) a deal in HubSpot.
+ *
+ * @param {string|number} dealId
+ * @returns {Promise<boolean>} true if the deletion succeeded.
+ */
+async function deleteHubSpotDeal(dealId) {
+  return dealRepository.remove(dealId);
+}
+
 module.exports = {
   getHubSpotContactNames,
   getHubSpotContacts,
   createHubSpotContact,
   updateHubSpotContact,
   deleteHubSpotContact,
+  getHubSpotDeals,
+  createHubSpotDeal,
+  updateHubSpotDeal,
+  deleteHubSpotDeal,
 };

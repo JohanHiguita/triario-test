@@ -33,15 +33,15 @@ function validatePaginationOptions({ after, limit, properties }) {
 }
 
 /**
- * Validates the "properties" object sent when creating/updating a contact
- * (POST/PATCH /crm/v3/objects/contacts). Only checks the generic shape
- * HubSpot expects (a non-empty plain object) — it does not enforce which
- * specific fields (e.g. email) must be present, since HubSpot itself doesn't
- * require any.
+ * Validates the "properties" object sent when creating/updating any HubSpot
+ * object (contacts, deals, etc.). Only checks the generic shape HubSpot
+ * expects (a non-empty plain object) — it does not enforce which specific
+ * fields must be present, since that varies per object type and HubSpot
+ * itself doesn't require any particular one.
  *
  * @param {object} properties
  */
-function validateContactProperties(properties) {
+function validateProperties(properties) {
   const isPlainObject =
     typeof properties === "object" &&
     properties !== null &&
@@ -70,6 +70,6 @@ function validateObjectId(id) {
 
 module.exports = {
   validatePaginationOptions,
-  validateContactProperties,
+  validateProperties,
   validateObjectId,
 };
