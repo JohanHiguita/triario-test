@@ -1,3 +1,5 @@
+const { ValidationError } = require("./errors");
+
 /**
  * Validates the pagination/query options sent to HubSpot's list endpoints
  * (e.g. GET /crm/v3/objects/contacts) before the request is built, so we fail
@@ -14,7 +16,7 @@ function validatePaginationOptions({ after, limit, properties }) {
       typeof limit === "number" && Number.isInteger(limit) && limit >= 1 && limit <= 100;
 
     if (!isValidLimit) {
-      throw new Error('"limit" must be an integer between 1 and 100');
+      throw new ValidationError('"limit" must be an integer between 1 and 100');
     }
   }
 
@@ -23,12 +25,12 @@ function validatePaginationOptions({ after, limit, properties }) {
       Array.isArray(properties) && properties.every((p) => typeof p === "string");
 
     if (!isValidProperties) {
-      throw new Error('"properties" must be an array of strings');
+      throw new ValidationError('"properties" must be an array of strings');
     }
   }
 
   if (after !== undefined && typeof after !== "string") {
-    throw new Error('"after" must be a string');
+    throw new ValidationError('"after" must be a string');
   }
 }
 
@@ -48,7 +50,7 @@ function validateProperties(properties) {
     !Array.isArray(properties);
 
   if (!isPlainObject || Object.keys(properties).length === 0) {
-    throw new Error('"properties" must be a non-empty object');
+    throw new ValidationError('"properties" must be a non-empty object');
   }
 }
 
@@ -64,7 +66,7 @@ function validateObjectId(id) {
     (typeof id === "number" && Number.isFinite(id)); 
 
   if (!isValidId) {
-    throw new Error('"id" must be a non-empty string or a number');
+    throw new ValidationError('"id" must be a non-empty string or a number');
   }
 }
 
@@ -79,11 +81,11 @@ function validateObjectId(id) {
  */
 function validateBatchUpsertInput(records, idProperty) {
   if (!Array.isArray(records) || records.length === 0) {
-    throw new Error('"records" must be a non-empty array');
+    throw new ValidationError('"records" must be a non-empty array');
   }
 
   if (records.length > 100) {
-    throw new Error("HubSpot batch endpoints accept at most 100 records per request");
+    throw new ValidationError("HubSpot batch endpoints accept at most 100 records per request");
   }
 
   const hasInvalidId = records.some(
@@ -91,7 +93,7 @@ function validateBatchUpsertInput(records, idProperty) {
   );
 
   if (hasInvalidId) {
-    throw new Error(`Every record must have a non-empty "${idProperty}" string`);
+    throw new ValidationError(`Every record must have a non-empty "${idProperty}" string`);
   }
 }
 

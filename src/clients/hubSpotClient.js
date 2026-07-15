@@ -17,6 +17,7 @@ if (!HUBSPOT_ACCESS_TOKEN) {
  */
 const hubSpotClient = axios.create({
   baseURL: "https://api.hubapi.com",
+  timeout: 10000, // avoid requests hanging indefinitely on network stalls
   headers: {
     Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
     "Content-Type": "application/json",

@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { HubSpotApiError } = require("./errors");
 
 const MAX_RETRIES = 3;
 const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
@@ -36,6 +37,10 @@ function logError(error) {
  * are not retried, since retrying would fail again for the same reason.
  * Network errors/timeouts (no response received) are also not retried here.
  *
+ * Once retries (if any) are exhausted, rejects with a `HubSpotApiError`
+ * instead of the raw Axios error, so callers don't need to know Axios is
+ * used under the hood to inspect `statusCode`/`message`.
+ *
  * @param {import('axios').AxiosError} error
  * @returns {Promise<never>}
  */
@@ -63,7 +68,9 @@ async function handleHubSpotErrors(error) {
   }
 
   logError(error);
-  return Promise.reject(error);
+
+  const message = error.response?.data?.message || error.message;
+  return Promise.reject(new HubSpotApiError(message, error.response?.status));
 }
 
 module.exports = { handleHubSpotErrors, calculateBackoffDelay };

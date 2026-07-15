@@ -72,7 +72,7 @@ This keeps each layer independently testable/replaceable (e.g. swapping axios fo
    npm run contacts:list-names
    ```
 
-> **Portal used for testing:** this integration was built and tested against a personal HubSpot **developer test account/portal** (Private App, described below). No real production portal or customer data is used.
+> **Portal used for testing:** this integration was built and tested against a personal HubSpot **developer test account/portal** (Private App, described below), Hub ID / Portal ID `51733430`. 
 
 ## HubSpot Private App configuration
 
@@ -158,12 +158,13 @@ Rate limits and pagination were handled per HubSpot's general guidance in [Under
 
 Implemented in `src/utils/handleHubSpotErrors.js`, registered as an Axios response interceptor on `hubSpotClient` (`src/clients/hubSpotClient.js`), so every HubSpot call is covered without repeating `try/catch` boilerplate per call:
 
-- **Network errors / timeouts** (no HTTP response at all): not retried automatically here; propagated to the caller so `examples` scripts can report them via their own `try/catch`.
+- **Network errors / timeouts**: `hubSpotClient` sets a 10s request timeout (no HTTP response at all after that, or a connection failure), not retried automatically here; propagated to the caller so `examples` scripts can report them via their own `try/catch`.
 - **401 (invalid/expired token) and 403 (missing scope)**: not retried — retrying the same request would fail again for the same reason. Logged and re-thrown.
-- **Other 4xx (validation, conflicts, etc.)**: not retried, for the same reason. Payloads are additionally checked _before_ the request is sent (see `src/utils/validateHubSpotPayload.js`) to fail fast on obviously invalid input (bad `limit`, missing required properties, etc.).
+- **Other 4xx (validation, conflicts, etc.)**: not retried, for the same reason. Payloads are additionally checked _before_ the request is sent (see `src/utils/validateHubSpotPayload.js`) to fail fast on obviously invalid input (bad `limit`, missing required properties, etc.), raising a `ValidationError` instead of a generic `Error`.
 - **429 (rate limit)**: retried, honoring HubSpot's `Retry-After` response header when present, falling back to exponential backoff (`2^attempt * 1000ms`) otherwise. Up to 3 attempts.
 - **5xx**: a curated subset (`500`, `502`, `503`, `504`) is retried with the same backoff strategy — see Decision 7 for why the rest of the 5xx range is intentionally excluded.
 - **Safe logging**: `logError()` only logs method, URL, HTTP status, and HubSpot's own error message — never headers, tokens, or request bodies.
+- **Custom error classes** (`src/utils/errors.js`): validation failures raise `ValidationError`; once retries (if any) are exhausted, any HubSpot API/network failure is rejected as `HubSpotApiError` (with a `statusCode`, `undefined` for network errors/timeouts) instead of the raw Axios error, so callers can do `err instanceof ValidationError` / `err instanceof HubSpotApiError` without depending on Axios's error shape.
 
 Every repository/service function is still wrapped in the caller's `try/catch` at the `examples` layer, so failures are reported per-script instead of crashing the process.
 

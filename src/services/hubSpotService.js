@@ -89,7 +89,6 @@ async function getHubSpotDeals({ after, limit, properties } = {}) {
 /**
  * Reads and validates the default pipeline/stage configuration used when
  * creating deals without an explicit pipeline/stage.
- * it is "private" it is not in the exports
  * @returns {{ pipeline: string, dealstage: string }}
  */
 function getDefaultDealPipelineConfig() {
